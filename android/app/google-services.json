@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "896546296461",
+    "project_id": "meeting-room-booking-app-3d637",
+    "storage_bucket": "meeting-room-booking-app-3d637.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:896546296461:android:fba382851bed3e2d6588c4",
+        "android_client_info": {
+          "package_name": "com.example.meeting_room_booking_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC6WMs3zDAbuKh_QaFXiNDlSFysgrCYUEY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

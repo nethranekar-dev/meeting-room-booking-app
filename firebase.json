@@ -1,0 +1,39 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "meeting-room-booking-app-3d637",
+          "appId": "1:896546296461:android:fba382851bed3e2d6588c4",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "meeting-room-booking-app-3d637",
+          "configurations": {
+            "android": "1:896546296461:android:fba382851bed3e2d6588c4",
+            "ios": "1:896546296461:ios:23003b4c57921a326588c4",
+            "macos": "1:896546296461:ios:23003b4c57921a326588c4",
+            "web": "1:896546296461:web:c662ed4e0a8317656588c4",
+            "windows": "1:896546296461:web:ee353afabd9e21c36588c4"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
