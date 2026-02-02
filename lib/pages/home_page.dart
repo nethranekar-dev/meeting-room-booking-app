@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,6 +20,8 @@ class _HomePageState extends State<HomePage> {
     await FirebaseFirestore.instance.collection('bookings').add({
       'roomName': _roomController.text.trim(),
       'timestamp': FieldValue.serverTimestamp(),
+      'userEmail': FirebaseAuth.instance.currentUser!.email,
+      'status': 'confirmed'
     });
 
     _roomController.clear();
@@ -28,7 +30,17 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Meeting Room Booking')),
+      appBar: AppBar(
+        title: const Text('Meeting Room Booking'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+            },
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -53,7 +65,7 @@ class _HomePageState extends State<HomePage> {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
-                  return CircularProgressIndicator();
+                  return const CircularProgressIndicator();
                 }
 
                 final docs = snapshot.data!.docs;
@@ -70,7 +82,7 @@ class _HomePageState extends State<HomePage> {
                             .toString(),
                       ),
                       trailing: IconButton(
-                        icon: Icon(Icons.delete),
+                        icon: const Icon(Icons.delete),
                         onPressed: () {
                           docs[index].reference.delete();
                         },
