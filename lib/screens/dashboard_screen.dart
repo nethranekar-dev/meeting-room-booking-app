@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/booking.dart';
 import '../services/firestore_service.dart';
+import '../pages/my_bookings_page.dart';
 import 'login_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -62,11 +64,9 @@ class DashboardScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-              );
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              Navigator.pushReplacementNamed(context, '/login');
             },
           ),
         ],
@@ -101,6 +101,12 @@ class DashboardScreen extends StatelessWidget {
                   subtitle: Text(
                     "${b.name} — ${b.time.toLocal().toString().substring(0, 16)}",
                   ),
+                  trailing: Chip(
+                    label: Text(b.status ?? "Scheduled"),
+                    backgroundColor: b.status == "Cancelled"
+                        ? Colors.red[100]
+                        : Colors.green[100],
+                  ),
                 ),
               );
             },
@@ -110,6 +116,18 @@ class DashboardScreen extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddDialog(context),
         child: const Icon(Icons.add),
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const MyBookingsPage()),
+            );
+          },
+          child: const Text("My Bookings"),
+        ),
       ),
     );
   }

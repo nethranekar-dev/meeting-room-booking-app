@@ -10,9 +10,12 @@ APK available on request
 
 ## 🔥 Features
 - Firebase Authentication (Login/Register)
+- **Secure Login & Logout** - Session handling with Firebase Auth
 - Real-time Firestore Database
+- **User-specific Booking History** - Only view your own bookings
 - Secure Booking System
 - Live Hosting on Firebase
+- **Real-time Firestore Updates** - Live booking status
 - User-based booking tracking
 - Cross-platform (Web + Android)
 
