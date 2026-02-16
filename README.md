@@ -19,15 +19,21 @@ Flutter + Firebase | Web + Mobile App
 - Firebase Hosting
 
 ## 🚀 Live Demo
-🌐 Web: https://meeting-room-booking-app-3d637.web.app
+🌐 **Web App**: https://meeting-room-booking-app-3d637.web.app
 
 ## 📱 Mobile App
 APK available on request
 
-## How To Run
+## How To Run Locally
 ```bash
 flutter pub get
 flutter run -d chrome
+```
+
+## How To Deploy
+```bash
+flutter build web --release
+firebase deploy --only hosting
 ```
 
 ## 👨‍💻 Developer
