@@ -29,6 +29,30 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
+    // Check for duplicate bookings
+    try {
+      final existing = await FirebaseFirestore.instance
+          .collection('bookings')
+          .where('roomName', isEqualTo: text)
+          .get();
+
+      if (existing.docs.isNotEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('This room is already booked for selected time.'),
+          ),
+        );
+        return;
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error checking bookings: $e')),
+      );
+      return;
+    }
+
     try {
       await FirebaseFirestore.instance.collection('bookings').add({
         'roomName': text,
@@ -88,7 +112,21 @@ class _HomePageState extends State<HomePage> {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
+                  return Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('Error loading bookings: ${snapshot.error}'),
+                        const SizedBox(height: 8),
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {});
+                          },
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  );
                 }
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
