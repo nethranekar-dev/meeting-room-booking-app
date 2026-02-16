@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
-import 'pages/home_page.dart';
 import 'screens/login_screen.dart';
+import 'screens/booking_screen.dart';
+import 'screens/admin_dashboard.dart';
+import 'screens/manage_rooms_screen.dart';
+import 'screens/all_bookings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +36,14 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
+      routes: {
+        "/login": (context) => const LoginScreen(),
+        "/home": (context) => const BookingScreen(),
+        "/admin": (context) => const AdminDashboard(),
+        "/rooms": (context) => const ManageRoomsScreen(),
+        "/bookings": (context) => const AllBookingsScreen(),
+      },
+      initialRoute: "/login",
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
@@ -42,7 +53,7 @@ class MyApp extends StatelessWidget {
             );
           }
           if (snapshot.hasData) {
-            return const HomePage();
+            return const BookingScreen();
           }
           return const LoginScreen();
         },
