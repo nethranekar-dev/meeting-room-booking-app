@@ -66,8 +66,8 @@ class AdminDashboard extends StatelessWidget {
               const SizedBox(width: 20),
               Text(
                 title,
-                style: const TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               )
             ],
           ),

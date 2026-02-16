@@ -34,7 +34,7 @@ class MyBookingsPage extends StatelessWidget {
             itemBuilder: (context, index) {
               final data = bookingDocs[index].data() as Map<String, dynamic>;
               final booking = Booking.fromMap(bookingDocs[index].id, data);
-              
+
               return ListTile(
                 title: Text(booking.room),
                 subtitle: Text(
