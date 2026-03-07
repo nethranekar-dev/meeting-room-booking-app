@@ -15,6 +15,14 @@ A professional Flutter application for booking meeting rooms with Firebase backe
 - ✅ **Role-Based Navigation** - Users directed based on role
 - ✅ **Responsive UI** - Clean Material Design
 
+## Screenshots
+### Login Screen
+![Login](screenshots/login.png)
+### Booking Screen
+![Booking](screenshots/booking.png)
+### Live Bookings
+![Live Bookings](screenshots/live_bookings.png)
+
 ## 🛠️ Tech Stack
 
 - **Frontend**: Flutter, Dart
