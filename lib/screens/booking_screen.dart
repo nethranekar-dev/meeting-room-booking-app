@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../services/firestore_service.dart';
 
 class BookingScreen extends StatefulWidget {
   const BookingScreen({super.key});
@@ -11,127 +10,90 @@ class BookingScreen extends StatefulWidget {
 }
 
 class _BookingScreenState extends State<BookingScreen> {
-  String? selectedRoomId;
-  String? selectedRoomName;
-
+  String selectedRoom = "Meeting Room A";
   DateTime? selectedDate;
-  TimeOfDay? startTime;
-  TimeOfDay? endTime;
+  TimeOfDay? selectedTime;
+  bool _isLoading = false;
 
-  bool loading = false;
-
-  DateTime _combine(DateTime date, TimeOfDay time) {
-    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
-  }
-
-  Future<void> pickDate() async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      firstDate: now,
-      lastDate: DateTime(now.year + 2),
-      initialDate: now,
-    );
-    if (picked != null) {
-      setState(() => selectedDate = picked);
-    }
-  }
-
-  Future<void> pickStartTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-    if (picked != null) setState(() => startTime = picked);
-  }
-
-  Future<void> pickEndTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-    if (picked != null) setState(() => endTime = picked);
-  }
+  final List<String> rooms = [
+    "Meeting Room A",
+    "Meeting Room B",
+    "Conference Room A",
+    "Conference Room B"
+  ];
 
   Future<void> bookRoom() async {
-    if (selectedRoomId == null ||
-        selectedRoomName == null ||
-        selectedDate == null ||
-        startTime == null ||
-        endTime == null) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill all fields.")),
+        const SnackBar(content: Text('You must be logged in to book a room')),
       );
       return;
     }
 
-    final start = _combine(selectedDate!, startTime!);
-    final end = _combine(selectedDate!, endTime!);
-
-    if (!end.isAfter(start)) {
+    if (selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("End time must be after start time.")),
+        const SnackBar(content: Text('Please select a date')),
       );
       return;
     }
 
-    setState(() => loading = true);
+    setState(() => _isLoading = true);
 
     try {
-      await FirestoreService().addBookingWithConflictCheck(
-        roomId: selectedRoomId!,
-        roomName: selectedRoomName!,
-        startTime: start,
-        endTime: end,
-      );
+      // Check for double booking
+      final existingBookings = await FirebaseFirestore.instance
+          .collection('bookings')
+          .where('room', isEqualTo: selectedRoom)
+          .where('date', isEqualTo: selectedDate.toString().split(' ')[0])
+          .get();
 
+      if (existingBookings.docs.isNotEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Room already booked for this date!')),
+        );
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // Save booking
+      await FirebaseFirestore.instance.collection('bookings').add({
+        'room': selectedRoom,
+        'date': selectedDate.toString().split(' ')[0],
+        'time': selectedTime?.format(context) ?? 'Not specified',
+        'timestamp': FieldValue.serverTimestamp(),
+        'userEmail': user.email,
+        'status': 'confirmed'
+      });
+
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Booking successful ✅")),
+        const SnackBar(content: Text('Room booked successfully!')),
       );
 
+      // Reset form
       setState(() {
         selectedDate = null;
-        startTime = null;
-        endTime = null;
-        selectedRoomId = null;
-        selectedRoomName = null;
+        selectedTime = null;
       });
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
+        SnackBar(content: Text('Booking failed: $e')),
       );
     } finally {
-      setState(() => loading = false);
+      setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Meeting Room Booking"),
+        title: const Text('Meeting Room Booking'),
         backgroundColor: Colors.indigo,
         actions: [
-          FutureBuilder<DocumentSnapshot>(
-            future: FirebaseFirestore.instance
-                .collection("users")
-                .doc(user!.uid)
-                .get(),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) return const SizedBox();
-              final role = snapshot.data!.get("role") ?? "user";
-              if (role != "admin") return const SizedBox();
-
-              return IconButton(
-                icon: const Icon(Icons.admin_panel_settings),
-                onPressed: () {
-                  Navigator.pushNamed(context, "/admin");
-                },
-              );
-            },
-          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
@@ -144,124 +106,152 @@ class _BookingScreenState extends State<BookingScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Book a Room",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            StreamBuilder<QuerySnapshot>(
-              stream:
-                  FirebaseFirestore.instance.collection("rooms").snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                final rooms = snapshot.data!.docs;
-
-                return DropdownButtonFormField<String>(
-                  value: selectedRoomId,
-                  decoration: const InputDecoration(
-                    labelText: "Select Room",
-                    border: OutlineInputBorder(),
-                  ),
-                  items: rooms.map((doc) {
-                    return DropdownMenuItem(
-                      value: doc.id,
-                      child: Text(doc["name"]),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    final roomDoc =
-                        rooms.firstWhere((element) => element.id == val);
-                    setState(() {
-                      selectedRoomId = val;
-                      selectedRoomName = roomDoc["name"];
-                    });
-                  },
+            // Room Dropdown
+            DropdownButtonFormField<String>(
+              initialValue: selectedRoom,
+              items: rooms.map((room) {
+                return DropdownMenuItem(
+                  value: room,
+                  child: Text(room),
                 );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedRoom = value!;
+                });
+              },
+              decoration: const InputDecoration(
+                labelText: 'Select Room',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 15),
+            // Date Picker
+            ElevatedButton.icon(
+              icon: const Icon(Icons.calendar_today),
+              label: Text(selectedDate == null
+                  ? 'Pick a Date'
+                  : selectedDate.toString().split(' ')[0]),
+              onPressed: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime(2025, 12, 31),
+                );
+                if (picked != null) {
+                  setState(() => selectedDate = picked);
+                }
               },
             ),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: pickDate,
-              child: Text(selectedDate == null
-                  ? "Pick Date"
-                  : "${selectedDate!.year}-${selectedDate!.month}-${selectedDate!.day}"),
+            const SizedBox(height: 15),
+            // Time Picker
+            ElevatedButton.icon(
+              icon: const Icon(Icons.access_time),
+              label: Text(selectedTime == null
+                  ? 'Pick a Time'
+                  : selectedTime!.format(context)),
+              onPressed: () async {
+                final picked = await showTimePicker(
+                  context: context,
+                  initialTime: TimeOfDay.now(),
+                );
+                if (picked != null) {
+                  setState(() => selectedTime = picked);
+                }
+              },
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: pickStartTime,
-                    child: Text(startTime == null
-                        ? "Start Time"
-                        : startTime!.format(context)),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: pickEndTime,
-                    child: Text(endTime == null
-                        ? "End Time"
-                        : endTime!.format(context)),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: loading ? null : bookRoom,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.indigo,
-                ),
-                child: loading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text("Book Room"),
-              ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _isLoading ? null : bookRoom,
+              child: _isLoading
+                  ? const CircularProgressIndicator()
+                  : const Text('Book Room'),
             ),
             const SizedBox(height: 20),
             const Divider(),
-            const SizedBox(height: 10),
-            const Text("Live Bookings",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text('Live Bookings', style: TextStyle(fontSize: 18)),
             const SizedBox(height: 10),
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
-                    .collection("bookings")
-                    .orderBy("startTime", descending: false)
+                    .collection('bookings')
+                    .orderBy('timestamp', descending: true)
                     .snapshots(),
                 builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
+                  if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
 
-                  final bookings = snapshot.data!.docs;
-
-                  if (bookings.isEmpty) {
-                    return const Center(child: Text("No bookings yet."));
+                  final docs = snapshot.data?.docs ?? [];
+                  if (docs.isEmpty) {
+                    return const Center(child: Text('No bookings yet'));
                   }
 
                   return ListView.builder(
-                    itemCount: bookings.length,
+                    shrinkWrap: true,
+                    itemCount: docs.length,
                     itemBuilder: (context, index) {
-                      final b = bookings[index];
-                      final start = (b["startTime"] as Timestamp).toDate();
-                      final end = (b["endTime"] as Timestamp).toDate();
-
-                      return Card(
-                        child: ListTile(
-                          title: Text(b["roomName"]),
-                          subtitle: Text(
-                              "${start.toString().substring(0, 16)} → ${end.toString().substring(0, 16)}"),
-                        ),
-                      );
+                      try {
+                        final doc = docs[index];
+                        final bookingData = (doc.data() as Map<String, dynamic>?) ?? <String, dynamic>{};
+                        final roomName = bookingData['room'] ?? bookingData['roomName'] ?? 'Room not found';
+                        final date = bookingData['date'] ?? 'N/A';
+                        final time = bookingData['time'] ?? bookingData['startTime'] ?? 'N/A';
+                        
+                        return Card(
+                          elevation: 4,
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: ListTile(
+                            leading: const Icon(
+                              Icons.meeting_room,
+                              color: Colors.indigo,
+                              size: 28,
+                            ),
+                            title: Text(
+                              roomName is String ? roomName : roomName.toString(),
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            subtitle: Text(
+                              'Date: $date | Time: $time',
+                            ),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () {
+                                FirebaseFirestore.instance
+                                    .collection('bookings')
+                                    .doc(doc.id)
+                                    .delete();
+                              },
+                            ),
+                          ),
+                        );
+                      } catch (e) {
+                        return Card(
+                          elevation: 4,
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          child: ListTile(
+                            title: const Text('Invalid Booking Data'),
+                            subtitle: Text('Error: $e'),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () {
+                                FirebaseFirestore.instance
+                                    .collection('bookings')
+                                    .doc(docs[index].id)
+                                    .delete();
+                              },
+                            ),
+                          ),
+                        );
+                      }
                     },
                   );
                 },

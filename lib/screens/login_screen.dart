@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'register_screen.dart';
 
@@ -23,19 +22,10 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text,
       );
 
-      final uid = FirebaseAuth.instance.currentUser!.uid;
-      final userDoc =
-          await FirebaseFirestore.instance.collection("users").doc(uid).get();
-
-      final role = userDoc.data()?["role"] ?? "user";
-
       if (!mounted) return;
 
-      if (role == "admin") {
-        Navigator.pushReplacementNamed(context, "/admin");
-      } else {
-        Navigator.pushReplacementNamed(context, "/home");
-      }
+      // Navigate to home
+      Navigator.pushReplacementNamed(context, "/home");
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Login failed: $e')),

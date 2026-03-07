@@ -9,13 +9,15 @@ class FirestoreService {
   /// Check for time conflicts in a room
   Future<bool> checkTimeConflict(
       String roomId, DateTime startTime, DateTime endTime) async {
+    final dateOnly = DateTime(startTime.year, startTime.month, startTime.day);
     final snapshot = await _db
         .collection("bookings")
         .where("roomId", isEqualTo: roomId)
+        .where("date", isEqualTo: Timestamp.fromDate(dateOnly))
         .get();
 
     for (var doc in snapshot.docs) {
-      final data = doc.data() as Map<String, dynamic>;
+      final data = doc.data();
       final existingStart = (data["startTime"] as Timestamp).toDate();
       final existingEnd = (data["endTime"] as Timestamp).toDate();
 
@@ -46,11 +48,14 @@ class FirestoreService {
       throw Exception("User not authenticated");
     }
 
+    final dateOnly = DateTime(startTime.year, startTime.month, startTime.day);
+
     await _db.collection("bookings").add({
       "roomId": roomId,
       "roomName": roomName,
       "userId": user.uid,
       "userEmail": user.email,
+      "date": Timestamp.fromDate(dateOnly),
       "startTime": Timestamp.fromDate(startTime),
       "endTime": Timestamp.fromDate(endTime),
       "status": "confirmed",
@@ -110,5 +115,10 @@ class FirestoreService {
 
   Future<void> addBooking(Booking booking) {
     return _db.collection('bookings').add(booking.toMap());
+  }
+
+  /// Delete a booking
+  Future<void> deleteBooking(String bookingId) {
+    return _db.collection('bookings').doc(bookingId).delete();
   }
 }

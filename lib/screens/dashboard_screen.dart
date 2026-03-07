@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/booking.dart';
 import '../services/firestore_service.dart';
 import '../pages/my_bookings_page.dart';
-import 'login_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
