@@ -63,8 +63,8 @@ class DashboardScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
+            onPressed: () {
+              FirebaseAuth.instance.signOut();
               Navigator.pushReplacementNamed(context, '/login');
             },
           ),

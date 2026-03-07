@@ -78,6 +78,8 @@ class _HomePageState extends State<HomePage> {
       "createdAt": Timestamp.now(),
     });
 
+    if (!mounted) return;
+
     setState(() {
       selectedDate = null;
       startTime = "";

@@ -58,10 +58,11 @@ class _BookingScreenState extends State<BookingScreen> {
       }
 
       // Save booking
+      final formattedTime = selectedTime?.format(context) ?? 'Not specified';
       await FirebaseFirestore.instance.collection('bookings').add({
         'room': selectedRoom,
         'date': selectedDate.toString().split(' ')[0],
-        'time': selectedTime?.format(context) ?? 'Not specified',
+        'time': formattedTime,
         'timestamp': FieldValue.serverTimestamp(),
         'userEmail': user.email,
         'status': 'confirmed'
@@ -98,6 +99,7 @@ class _BookingScreenState extends State<BookingScreen> {
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
+              if (!mounted) return;
               Navigator.pushReplacementNamed(context, "/login");
             },
           ),
